@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Library Manager</title>
+  <style>
+    /* Загальні стилі сторінки */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+    }
+
+    /* Шапка сайту */
+    header {
+      background-color: #2e7d32;
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    /* Кнопки */
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn-green  { background-color: #2e7d32; color: white; }
+    .btn-red    { background-color: #c62828; color: white; }
+    .btn-blue   { background-color: #1565c0; color: white; }
+    .btn-gray   { background-color: #777;    color: white; }
+
+    button:hover { opacity: 0.85; }
+
+    /* Блок (картка) */
+    .box {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .box h2 {
+      margin-top: 0;
+      font-size: 18px;
+      color: #333;
+    }
+
+    /* Поля вводу */
+    input, select {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    /* Таблиця */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th {
+      background-color: #e8f5e9;
+      text-align: left;
+      padding: 10px;
+      border-bottom: 2px solid #ccc;
+    }
+
+    td {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    tr:hover { background-color: #f9f9f9; }
+
+    /* Вкладки (Книги / Автори) */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      background-color: #ddd;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .tab.active {
+      background-color: #2e7d32;
+      color: white;
+    }
+
+    /* Приховати неактивну секцію */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* Екран входу */
+    #loginScreen {
+      max-width: 360px;
+      margin: 80px auto;
+    }
+
+    #loginScreen h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #loginScreen input {
+      width: 100%;
+      display: block;
+      margin-bottom: 12px;
+      box-sizing: border-box;
+    }
+
+    #loginScreen button {
+      width: 100%;
+      padding: 10px;
+      font-size: 15px;
+    }
+
+    .error { color: red; font-size: 13px; margin-top: 8px; }
+
+    /* Повідомлення */
+    #message {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #333;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 6px;
+      display: none;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ======= ЕКРАН ВХОДУ ======= -->
+<div id="loginScreen">
+  <div class="box">
+    <h2>📚 Library Manager</h2>
+    <input type="text"     id="loginUser" placeholder="Логін (admin)" />
+    <input type="password" id="loginPass" placeholder="Пароль (admin)" />
+    <button class="btn-green" onclick="login()">Увійти</button>
+    <div class="error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- ======= ГОЛОВНА СТОРІНКА ======= -->
+<div id="app" style="display:none;">
+
+  <!-- Шапка -->
+  <header>
+    <h1>📚 Library Manager</h1>
+    <div>
+      <span id="userLabel" style="margin-right:15px;"></span>
+      <button class="btn-gray" onclick="exportBooks()" style="margin-right:8px;">⬇ Експорт</button>
+      <button class="btn-red"  onclick="logout()">Вийти</button>
+    </div>
+  </header>
+
+  <!-- Вкладки -->
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('books', this)">📖 Книги</div>
+    <div class="tab"        onclick="showTab('authors', this)">👤 Автори</div>
+  </div>
+
+  <!-- ======= ВКЛАДКА: КНИГИ ======= -->
+  <div class="section active" id="tab-books">
+
+    <!-- Форма додавання книги -->
+    <div class="box">
+      <h2>Додати книгу</h2>
+      <input  type="text"   id="bookTitle"  placeholder="Назва книги" />
+      <select id="bookAuthor">
+        <option value="">— оберіть автора —</option>
+      </select>
+      <input  type="number" id="bookYear"   placeholder="Рік" />
+      <button class="btn-green" onclick="addBook()">+ Додати</button>
+    </div>
+
+    <!-- Пошук -->
+    <div class="box">
+      <h2>Список книг</h2>
+      <input type="text" id="filterText" placeholder="🔍 Пошук за назвою або автором..." oninput="renderBooks()" style="width:300px;" />
+      <div id="booksTable"></div>
+    </div>
+
+  </div>
+
+  <!-- ======= ВКЛАДКА: АВТОРИ ======= -->
+  <div class="section" id="tab-authors">
+
+    <!-- Форма додавання автора -->
+    <div class="box">
+      <h2>Додати автора</h2>
+      <input type="text" id="authorName" placeholder="Ім'я автора" />
+      <button class="btn-green" onclick="addAuthor()">+ Додати</button>
+    </div>
+
+    <!-- Список авторів -->
+    <div class="box">
+      <h2>Список авторів</h2>
+      <div id="authorsTable"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Вікно редагування -->
+<div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4);">
+  <div class="box" style="max-width:400px; margin:100px auto;">
+    <h2>✏️ Редагувати книгу</h2>
+    <input type="hidden" id="editId" />
+    <div>
+      <label>Назва:</label><br>
+      <input type="text" id="editTitle" style="width:100%; box-sizing:border-box;" />
+    </div>
+    <br>
+    <div>
+      <label>Автор:</label><br>
+      <select id="editAuthor" style="width:100%;"></select>
+    </div>
+    <br>
+    <div>
+      <label>Рік:</label><br>
+      <input type="number" id="editYear" style="width:100%; box-sizing:border-box;" />
+    </div>
+    <br>
+    <button class="btn-green" onclick="saveEdit()">Зберегти</button>
+    <button class="btn-gray"  onclick="closeModal()" style="margin-left:8px;">Скасувати</button>
+  </div>
+</div>
+
+<!-- Повідомлення -->
+<div id="message"></div>
+
+<script>
+
+  // ============================================================
+  // АВТОРИЗАЦІЯ
+  // ============================================================
+
+  // Список користувачів: логін -> пароль
+  var users = {
+    admin: "admin",
+    user:  "1234"
+  };
+
+  function login() {
+    var username = document.getElementById("loginUser").value;
+    var password = document.getElementById("loginPass").value;
+
+    // Перевіряємо чи є такий користувач і чи пароль правильний
+    if (users[username] && users[username] === password) {
+      localStorage.setItem("loggedIn", username);
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("app").style.display = "block";
+      document.getElementById("userLabel").textContent = "👤 " + username;
+      init();
+    } else {
+      document.getElementById("loginError").textContent = "Невірний логін або пароль!";
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem("loggedIn");
+    location.reload();
+  }
+
+  // Якщо вже залогінений — одразу показати застосунок
+  window.onload = function() {
+    var savedUser = localStorage.getItem("loggedIn");
+    if (savedUser) {
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("app").style.display = "block";
+      document.getElementById("userLabel").textContent = "👤 " + savedUser;
+      init();
+    }
+
+    // Вхід по натисканню Enter
+    document.getElementById("loginPass").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") login();
+    });
+  };
+
+
+  // ============================================================
+  // ІНІЦІАЛІЗАЦІЯ
+  // ============================================================
+
+  function init() {
+    renderBooks();
+    renderAuthors();
+    fillAuthorSelects();
+  }
+
+
+  // ============================================================
+  // ВКЛАДКИ
+  // ============================================================
+
+  function showTab(name, clickedTab) {
+    // Сховати всі секції
+    var sections = document.querySelectorAll(".section");
+    for (var i = 0; i < sections.length; i++) {
+      sections[i].classList.remove("active");
+    }
+
+    // Прибрати активний клас з вкладок
+    var tabs = document.querySelectorAll(".tab");
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].classList.remove("active");
+    }
+
+    // Показати потрібну секцію і вкладку
+    document.getElementById("tab-" + name).classList.add("active");
+    clickedTab.classList.add("active");
+  }
+
+
+  // ============================================================
+  // РОБОТА З ДАНИМИ (localStorage)
+  // ============================================================
+
+  // Отримати список з localStorage
+  function getData(key) {
+    var data = localStorage.getItem(key);
+    if (data) {
+      return JSON.parse(data);
+    }
+    return [];
+  }
+
+  // Зберегти список в localStorage
+  function saveData(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+
+  // ============================================================
+  // КНИГИ
+  // ============================================================
+
+  function addBook() {
+    var title  = document.getElementById("bookTitle").value.trim();
+    var author = document.getElementById("bookAuthor").value;
+    var year   = document.getElementById("bookYear").value.trim();
+
+    // Перевірка що поля заповнені
+    if (!title || !author) {
+      showMessage("Введіть назву та оберіть автора!");
+      return;
+    }
+
+    // Створюємо нову книгу
+    var newBook = {
+      id:     Date.now(), // унікальний ID (поточний час)
+      title:  title,
+      author: author,
+      year:   year
+    };
+
+    // Додаємо до списку і зберігаємо
+    var books = getData("books");
+    books.push(newBook);
+    saveData("books", books);
+
+    // Очищаємо поля
+    document.getElementById("bookTitle").value  = "";
+    document.getElementById("bookYear").value   = "";
+    document.getElementById("bookAuthor").value = "";
+
+    renderBooks();
+    showMessage("Книгу додано ✓");
+  }
+
+  function deleteBook(id) {
+    var books = getData("books");
+
+    // Залишаємо всі книги крім тієї що видаляємо
+    var updated = [];
+    for (var i = 0; i < books.length; i++) {
+      if (books[i].id !== id) {
+        updated.push(books[i]);
+      }
+    }
+
+    saveData("books", updated);
+    renderBooks();
+    showMessage("Книгу видалено");
+  }
+
+  function renderBooks() {
+    var filterText = document.getElementById("filterText").value.toLowerCase();
+    var books = getData("books");
+
+    // Фільтруємо книги за пошуковим текстом
+    var filtered = [];
+    for (var i = 0; i < books.length; i++) {
+      var titleMatch  = books[i].title.toLowerCase().includes(filterText);
+      var authorMatch = books[i].author.toLowerCase().includes(filterText);
+      if (titleMatch || authorMatch) {
+        filtered.push(books[i]);
+      }
+    }
+
+    var container = document.getElementById("booksTable");
+
+    if (filtered.length === 0) {
+      container.innerHTML = "<p style='color:#999;'>Книг не знайдено.</p>";
+      return;
+    }
+
+    // Будуємо таблицю
+    var html = "<table>";
+    html += "<tr><th>#</th><th>Назва</th><th>Автор</th><th>Рік</th><th>Дії</th></tr>";
+
+    for (var i = 0; i < filtered.length; i++) {
+      var book = filtered[i];
+      html += "<tr>";
+      html += "<td>" + (i + 1) + "</td>";
+      html += "<td><strong>" + book.title + "</strong></td>";
+      html += "<td>" + book.author + "</td>";
+      html += "<td>" + (book.year || "—") + "</td>";
+      html += "<td>";
+      html += "<button class='btn-blue' onclick='openEdit(" + book.id + ")' style='margin-right:5px;'>✏ Редагувати</button>";
+      html += "<button class='btn-red'  onclick='deleteBook(" + book.id + ")'>🗑 Видалити</button>";
+      html += "</td>";
+      html += "</tr>";
+    }
+
+    html += "</table>";
+    container.innerHTML = html;
+  }
+
+
+  // ============================================================
+  // АВТОРИ
+  // ============================================================
+
+  function addAuthor() {
+    var name = document.getElementById("authorName").value.trim();
+
+    if (!name) {
+      showMessage("Введіть ім'я автора!");
+      return;
+    }
+
+    var authors = getData("authors");
+
+    // Перевіряємо чи такий автор вже є
+    for (var i = 0; i < authors.length; i++) {
+      if (authors[i].name.toLowerCase() === name.toLowerCase()) {
+        showMessage("Такий автор вже є!");
+        return;
+      }
+    }
+
+    // Додаємо автора
+    authors.push({ id: Date.now(), name: name });
+    saveData("authors", authors);
+
+    document.getElementById("authorName").value = "";
+
+    renderAuthors();
+    fillAuthorSelects();
+    showMessage("Автора додано ✓");
+  }
+
+  function deleteAuthor(id) {
+    var authors = getData("authors");
+
+    // Знаходимо ім'я автора перед видаленням
+    var authorName = "";
+    for (var i = 0; i < authors.length; i++) {
+      if (authors[i].id === id) {
+        authorName = authors[i].name;
+      }
+    }
+
+    // Видаляємо автора
+    var updatedAuthors = [];
+    for (var i = 0; i < authors.length; i++) {
+      if (authors[i].id !== id) {
+        updatedAuthors.push(authors[i]);
+      }
+    }
+    saveData("authors", updatedAuthors);
+
+    // Видаляємо всі книги цього автора
+    var books = getData("books");
+    var updatedBooks = [];
+    for (var i = 0; i < books.length; i++) {
+      if (books[i].author !== authorName) {
+        updatedBooks.push(books[i]);
+      }
+    }
+    saveData("books", updatedBooks);
+
+    renderAuthors();
+    renderBooks();
+    fillAuthorSelects();
+    showMessage("Автора та його книги видалено");
+  }
+
+  function renderAuthors() {
+    var authors = getData("authors");
+    var books   = getData("books");
+    var container = document.getElementById("authorsTable");
+
+    if (authors.length === 0) {
+      container.innerHTML = "<p style='color:#999;'>Авторів немає. Додайте першого!</p>";
+      return;
+    }
+
+    var html = "<table>";
+    html += "<tr><th>#</th><th>Ім'я</th><th>Книг</th><th>Дії</th></tr>";
+
+    for (var i = 0; i < authors.length; i++) {
+      var author = authors[i];
+
+      // Рахуємо кількість книг цього автора
+      var bookCount = 0;
+      for (var j = 0; j < books.length; j++) {
+        if (books[j].author === author.name) {
+          bookCount++;
+        }
+      }
+
+      html += "<tr>";
+      html += "<td>" + (i + 1) + "</td>";
+      html += "<td><strong>" + author.name + "</strong></td>";
+      html += "<td>" + bookCount + "</td>";
+      html += "<td><button class='btn-red' onclick='deleteAuthor(" + author.id + ")'>🗑 Видалити</button></td>";
+      html += "</tr>";
+    }
+
+    html += "</table>";
+    container.innerHTML = html;
+  }
+
+  // Заповнити випадаючі списки авторів
+  function fillAuthorSelects() {
+    var authors = getData("authors");
+    var options = "<option value=''>— оберіть автора —</option>";
+
+    for (var i = 0; i < authors.length; i++) {
+      options += "<option value='" + authors[i].name + "'>" + authors[i].name + "</option>";
+    }
+
+    document.getElementById("bookAuthor").innerHTML  = options;
+    document.getElementById("editAuthor").innerHTML  = options;
+  }
+
+
+  // ============================================================
+  // РЕДАГУВАННЯ КНИГИ
+  // ============================================================
+
+  function openEdit(id) {
+    var books = getData("books");
+    var book  = null;
+
+    // Знаходимо книгу за ID
+    for (var i = 0; i < books.length; i++) {
+      if (books[i].id === id) {
+        book = books[i];
+      }
+    }
+
+    if (!book) return;
+
+    fillAuthorSelects();
+
+    // Заповнюємо форму редагування
+    document.getElementById("editId").value     = id;
+    document.getElementById("editTitle").value  = book.title;
+    document.getElementById("editAuthor").value = book.author;
+    document.getElementById("editYear").value   = book.year || "";
+
+    document.getElementById("editModal").style.display = "block";
+  }
+
+  function closeModal() {
+    document.getElementById("editModal").style.display = "none";
+  }
+
+  function saveEdit() {
+    var id     = Number(document.getElementById("editId").value);
+    var title  = document.getElementById("editTitle").value.trim();
+    var author = document.getElementById("editAuthor").value;
+    var year   = document.getElementById("editYear").value.trim();
+
+    if (!title || !author) {
+      showMessage("Заповніть усі поля!");
+      return;
+    }
+
+    var books = getData("books");
+
+    // Оновлюємо книгу з потрібним ID
+    for (var i = 0; i < books.length; i++) {
+      if (books[i].id === id) {
+        books[i].title  = title;
+        books[i].author = author;
+        books[i].year   = year;
+      }
+    }
+
+    saveData("books", books);
+    closeModal();
+    renderBooks();
+    showMessage("Книгу оновлено ✓");
+  }
+
+
+  // ============================================================
+  // ЕКСПОРТ
+  // ============================================================
+
+  function exportBooks() {
+    var books = getData("books");
+
+    if (books.length === 0) {
+      showMessage("Немає книг для експорту!");
+      return;
+    }
+
+    // Формуємо CSV файл
+    var csv = "Назва,Автор,Рік\n";
+    for (var i = 0; i < books.length; i++) {
+      csv += '"' + books[i].title + '","' + books[i].author + '","' + (books[i].year || "") + '"\n';
+    }
+
+    // Завантажуємо файл
+    var link = document.createElement("a");
+    link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    link.download = "library.csv";
+    link.click();
+
+    showMessage("Експорт завершено ✓");
+  }
+
+
+  // ============================================================
+  // ПОВІДОМЛЕННЯ
+  // ============================================================
+
+  function showMessage(text) {
+    var msg = document.getElementById("message");
+    msg.textContent = text;
+    msg.style.display = "block";
+    setTimeout(function() {
+      msg.style.display = "none";
+    }, 2500);
+  }
+
+</script>
+</body>
+</html>
